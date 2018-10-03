@@ -20,6 +20,10 @@ steps:
     version: '2.1.202' 
 
 - script: |
+    dotnet restore Infer2.sln
+  displayName: Restoring packages
+
+- script: |
     dotnet build --configuration $(buildConfiguration)Core Infer2.sln
   displayName: Build Solution
     
