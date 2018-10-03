@@ -342,6 +342,8 @@ namespace Microsoft.ML.Probabilistic.Compiler
             List<string> assemblyNames = new List<string>();
             foreach (Assembly assembly in referencedAssemblies)
             {
+                if (String.IsNullOrEmpty(assembly.Location))
+                    continue; // In-memory assembly
                 try
                 {
                     assemblyNames.Add(assembly.Location);

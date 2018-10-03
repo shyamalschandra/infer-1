@@ -171,38 +171,44 @@ namespace Microsoft.ML.Probabilistic.Compiler.Transforms
             Assembly[] assemblies = app.GetAssemblies();
             foreach (Assembly assembly in assemblies)
             {
-                object[] attrs = assembly.GetCustomAttributes(typeof(HasMessageFunctionsAttribute), true);
-                if (attrs.Length > 0)
-                {
-                    // scan all types in the assembly
-                    Type[] types = assembly.GetTypes();
-                    foreach (Type type in types)
+                try { 
+                    object[] attrs = assembly.GetCustomAttributes(typeof(HasMessageFunctionsAttribute), true);
+                    if (attrs.Length > 0)
                     {
-                        attrs = type.GetCustomAttributes(typeof(FactorMethodAttribute), true);
-                        foreach (FactorMethodAttribute attr in attrs)
+                        // scan all types in the assembly
+                        Type[] types = assembly.GetTypes();
+                        foreach (Type type in types)
                         {
-                            if (attr.Default) DefaultPriorityList.Add(type);
-                            MethodReference mref = MethodReference.FromFactorAttribute(attr);
-                            MethodInfo method;
-                            try
+                            attrs = type.GetCustomAttributes(typeof(FactorMethodAttribute), true);
+                            foreach (FactorMethodAttribute attr in attrs)
                             {
-                                method = mref.GetMethodInfo();
+                                if (attr.Default) DefaultPriorityList.Add(type);
+                                MethodReference mref = MethodReference.FromFactorAttribute(attr);
+                                MethodInfo method;
+                                try
+                                {
+                                    method = mref.GetMethodInfo();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex);
+                                    continue;
+                                }
+                                //if (method.IsGenericMethod) method = method.GetGenericMethodDefinition();
+                                IList<Type> operators;
+                                if (!OperatorsOfFactor.TryGetValue(method, out operators))
+                                {
+                                    operators = new List<Type>();
+                                }
+                                operators.Add(type);
+                                OperatorsOfFactor[method] = operators;
                             }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex);
-                                continue;
-                            }
-                            //if (method.IsGenericMethod) method = method.GetGenericMethodDefinition();
-                            IList<Type> operators;
-                            if (!OperatorsOfFactor.TryGetValue(method, out operators))
-                            {
-                                operators = new List<Type>();
-                            }
-                            operators.Add(type);
-                            OperatorsOfFactor[method] = operators;
                         }
                     }
+                }
+                catch(Exception exc)
+                {
+                    Trace.WriteLine($"Error loading factors from {assembly.FullName}: {exc.Message}");
                 }
             }
         }
